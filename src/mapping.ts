@@ -1,4 +1,3 @@
-import { BigInt } from "@graphprotocol/graph-ts"
 import {
   BattleNFTFactory,
   Aborted,
@@ -8,66 +7,132 @@ import {
   GameStarted,
   JoinedGame,
   OwnershipTransferred,
-  Withdrawed
-} from "../generated/BattleNFTFactory/BattleNFTFactory"
-import { ExampleEntity } from "../generated/schema"
+  Withdrawed,
+} from "../generated/BattleNFTFactory/BattleNFTFactory";
+import { Game, Player, PlayerGame } from "../generated/schema";
+import { ONE_BI, ZERO_BI } from "./helpers";
 
-export function handleAborted(event: Aborted): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from.toHex())
+export function handleAborted(event: Aborted): void {}
 
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from.toHex())
+export function handleClaimed(event: Claimed): void {
+  const player = Player.load(`${event.params.claimer}`);
 
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
+  if (player) {
+    player.totalEarned = player.totalEarned.plus(event.params.amount);
+    player.EarnedMinusSpent = player.EarnedMinusSpent.plus(event.params.amount);
+    player.save();
   }
-
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
-
-  // Entity fields can be set based on event parameters
-  entity.id = event.params.id
-  entity.created_at = event.params.created_at
-
-  // Entities can be written to the store with `.save()`
-  entity.save()
-
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
-
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.allGames(...)
-  // - contract.coin_player1(...)
-  // - contract.coin_player2(...)
-  // - contract.getPriceFeed(...)
-  // - contract.owner(...)
 }
 
-export function handleClaimed(event: Claimed): void {}
+export function handleCreatedGame(event: CreatedGame): void {
+  // We use here the array id
 
-export function handleCreatedGame(event: CreatedGame): void {}
+  const factoryContract = BattleNFTFactory.bind(event.address);
+  const gameContract = factoryContract.allGames(event.params.id);
+  const game = new Game(`${event.params.id}`);
+  game.createdAt = event.block.timestamp;
+  game.createdBy = event.transaction.from;
+  game.duration = gameContract.value9;
+  game.entry = gameContract.value6;
+  game.status = "Waiting";
+  game.startsAt = gameContract.value10;
+  game.type = gameContract.value12 == 0 ? "Bull" : "Bear";
 
-export function handleGameFinished(event: GameFinished): void {}
+  game.save();
+  const player = Player.load(`${event.transaction.from}`);
+  if (!player) {
+    const newPlayer = new Player(`${event.transaction.from}`);
+    newPlayer.totalJoinedGames = ONE_BI;
+    newPlayer.totalSpent = gameContract.value6;
+    newPlayer.totalEarned = ZERO_BI;
+    newPlayer.EarnedMinusSpent = gameContract.value6.neg();
+    newPlayer.save();
+    if (game && newPlayer) {
+      const playerGame = new PlayerGame(`${game.id}-${newPlayer.id}`);
+      playerGame.game = game.id;
+      playerGame.player = newPlayer.id;
+      playerGame.save();
+    }
+  }
+  if (player) {
+    player.totalJoinedGames = player.totalJoinedGames.plus(ONE_BI);
+    player.totalSpent = player.totalSpent.plus(gameContract.value6);
+    player.EarnedMinusSpent = player.EarnedMinusSpent.minus(
+      gameContract.value6
+    );
+    player.save();
+    if (game && player) {
+      const playerGame = new PlayerGame(`${game.id}-${player.id}`);
+      playerGame.game = game.id;
+      playerGame.player = player.id;
+      playerGame.save();
+    }
+  }
+}
 
-export function handleGameStarted(event: GameStarted): void {}
+export function handleGameFinished(event: GameFinished): void {
+  const game = Game.load(`${event.params.id}`);
+  if (game) {
+    game.status = "Ended";
+    game.endedAt = event.block.timestamp;
+    game.save();
+  }
+}
 
-export function handleJoinedGame(event: JoinedGame): void {}
+export function handleGameStarted(event: GameStarted): void {
+  const game = Game.load(`${event.params.id}`);
+  if (game) {
+    game.status = "Started";
+    game.startedAt = event.block.timestamp;
+    game.save();
+  }
+}
+
+export function handleJoinedGame(event: JoinedGame): void {
+  const player = Player.load(`${event.transaction.from}`);
+  const factoryContract = BattleNFTFactory.bind(event.address);
+  const gameContract = factoryContract.allGames(event.params.id);
+  const game = new Game(`${event.params.id}`);
+  if (!player) {
+    const newPlayer = new Player(`${event.transaction.from}`);
+    newPlayer.totalJoinedGames = ONE_BI;
+    newPlayer.totalSpent = gameContract.value6;
+    newPlayer.totalEarned = ZERO_BI;
+    newPlayer.EarnedMinusSpent = gameContract.value6.neg();
+    newPlayer.save();
+    if (game && newPlayer) {
+      const playerGame = new PlayerGame(`${game.id}-${newPlayer.id}`);
+      playerGame.game = game.id;
+      playerGame.player = newPlayer.id;
+      playerGame.save();
+    }
+  }
+  if (player) {
+    player.totalJoinedGames = player.totalJoinedGames.plus(ONE_BI);
+    player.totalSpent = player.totalSpent.plus(gameContract.value6);
+    player.EarnedMinusSpent = player.EarnedMinusSpent.minus(
+      gameContract.value6
+    );
+    player.save();
+    if (game && player) {
+      const playerGame = new PlayerGame(`${game.id}-${player.id}`);
+      playerGame.game = game.id;
+      playerGame.player = player.id;
+      playerGame.save();
+    }
+  }
+}
 
 export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
 
-export function handleWithdrawed(event: Withdrawed): void {}
+export function handleWithdrawed(event: Withdrawed): void {
+  const player = Player.load(`${event.transaction.from}`);
+  const factoryContract = BattleNFTFactory.bind(event.address);
+  const gameContract = factoryContract.allGames(event.params.id);
+  if (player) {
+    player.totalJoinedGames = player.totalJoinedGames.minus(ONE_BI);
+    player.totalSpent = player.totalSpent.minus(gameContract.value6);
+    player.EarnedMinusSpent = player.EarnedMinusSpent.plus(gameContract.value6);
+    player.save();
+  }
+}

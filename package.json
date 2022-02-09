@@ -1,5 +1,5 @@
 {
-  "name": "nft-league-mumbai",
+  "name": "nft-league",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
