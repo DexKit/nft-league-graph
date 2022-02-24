@@ -12,10 +12,10 @@ import {
 import { Game, Player, PlayerGame } from "../generated/schema";
 import { ONE_BI, ZERO_BI } from "./helpers";
 
-export function handleAborted(event: Aborted): void {}
+export function handleAborted(event: Aborted): void { }
 
 export function handleClaimed(event: Claimed): void {
-  const player = Player.load(`${event.params.claimer}`);
+  const player = Player.load(`${event.params.claimer.toHexString()}`);
 
   if (player) {
     player.totalEarned = player.totalEarned.plus(event.params.amount);
@@ -39,9 +39,9 @@ export function handleCreatedGame(event: CreatedGame): void {
   game.type = gameContract.value12 == 0 ? "Bull" : "Bear";
 
   game.save();
-  const player = Player.load(`${event.transaction.from}`);
+  const player = Player.load(`${event.transaction.from.toHexString()}`);
   if (!player) {
-    const newPlayer = new Player(`${event.transaction.from}`);
+    const newPlayer = new Player(`${event.transaction.from.toHexString()}`);
     newPlayer.totalJoinedGames = ONE_BI;
     newPlayer.totalSpent = gameContract.value6;
     newPlayer.totalEarned = ZERO_BI;
@@ -71,7 +71,7 @@ export function handleCreatedGame(event: CreatedGame): void {
 }
 
 export function handleGameFinished(event: GameFinished): void {
-  const game = Game.load(`${event.params.id}`);
+  const game = Game.load(`${event.params.id.toHexString()}`);
   if (game) {
     game.status = "Ended";
     game.endedAt = event.block.timestamp;
@@ -80,7 +80,7 @@ export function handleGameFinished(event: GameFinished): void {
 }
 
 export function handleGameStarted(event: GameStarted): void {
-  const game = Game.load(`${event.params.id}`);
+  const game = Game.load(`${event.params.id.toHexString()}`);
   if (game) {
     game.status = "Started";
     game.startedAt = event.block.timestamp;
@@ -89,12 +89,12 @@ export function handleGameStarted(event: GameStarted): void {
 }
 
 export function handleJoinedGame(event: JoinedGame): void {
-  const player = Player.load(`${event.transaction.from}`);
+  const player = Player.load(`${event.transaction.from.toHexString()}`);
   const factoryContract = BattleNFTFactory.bind(event.address);
   const gameContract = factoryContract.allGames(event.params.id);
   const game = new Game(`${event.params.id}`);
   if (!player) {
-    const newPlayer = new Player(`${event.transaction.from}`);
+    const newPlayer = new Player(`${event.transaction.from.toHexString()}`);
     newPlayer.totalJoinedGames = ONE_BI;
     newPlayer.totalSpent = gameContract.value6;
     newPlayer.totalEarned = ZERO_BI;
@@ -123,10 +123,10 @@ export function handleJoinedGame(event: JoinedGame): void {
   }
 }
 
-export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
+export function handleOwnershipTransferred(event: OwnershipTransferred): void { }
 
 export function handleWithdrawed(event: Withdrawed): void {
-  const player = Player.load(`${event.transaction.from}`);
+  const player = Player.load(`${event.transaction.from.toHexString()}`);
   const factoryContract = BattleNFTFactory.bind(event.address);
   const gameContract = factoryContract.allGames(event.params.id);
   if (player) {
