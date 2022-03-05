@@ -6,9 +6,9 @@ dataSources:
     name: BattleNFTFactory
     network: mumbai
     source:
-      address: "0x9565C656f26C55a18af32dab3bE8aaff1B0BbB72"
+      address: "0x45e6E5723a1534581cfC2d899e0E70A0268e040F"
       abi: BattleNFTFactory
-      startBlock: 25222025
+      startBlock: 25365460
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
