@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: BattleNFTFactory
-    network: matic
+    network: {{ network }}
     source:
-      address: "0xbc1F616f4fb303151496d215B67D1dE443EA7e9b"
+      address: "{{address}}"
       abi: BattleNFTFactory
-      startBlock: 26277294
+      startBlock: {{ startBlock }}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5

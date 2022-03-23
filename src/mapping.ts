@@ -71,7 +71,7 @@ export function handleCreatedGame(event: CreatedGame): void {
 }
 
 export function handleGameFinished(event: GameFinished): void {
-  const game = Game.load(`${event.params.id.toHexString()}`);
+  const game = Game.load(`${event.params.id}`);
   if (game) {
     game.status = "Ended";
     game.endedAt = event.block.timestamp;
@@ -80,7 +80,7 @@ export function handleGameFinished(event: GameFinished): void {
 }
 
 export function handleGameStarted(event: GameStarted): void {
-  const game = Game.load(`${event.params.id.toHexString()}`);
+  const game = Game.load(`${event.params.id}`);
   if (game) {
     game.status = "Started";
     game.startedAt = event.block.timestamp;
