@@ -1,0 +1,12 @@
+yarn run v1.22.17
+$ graph deploy --node https://api.thegraph.com/deploy/ JoaoCampos89/nft-league-mumbai
+
+[32mBuild completed: QmZc8CJDkpVu2276sATMEfaizTqNDkEbiYTjdAibg4V1AM[39m
+
+[32mDeployed to https://thegraph.com/explorer/subgraph/JoaoCampos89/nft-league-mumbai[39m
+[0m[0m
+[0mSubgraph endpoints:[0m
+[0mQueries (HTTP):     https://api.thegraph.com/subgraphs/name/joaocampos89/nft-league-mumbai[0m
+[0mSubscriptions (WS): wss://api.thegraph.com/subgraphs/name/joaocampos89/nft-league-mumbai[0m
+
+Done in 12.00s.

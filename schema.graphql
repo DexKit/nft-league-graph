@@ -19,6 +19,7 @@ type Game @entity {
   createdBy: Bytes!
   status: GameStatus!
   type: GameType!
+  playerAddresses: [Bytes!]!
   players: [PlayerGame!] @derivedFrom(field: "game")
   duration: BigInt!
   entry: BigInt

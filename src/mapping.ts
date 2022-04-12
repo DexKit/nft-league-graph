@@ -1,3 +1,4 @@
+import { Bytes } from "@graphprotocol/graph-ts";
 import {
   BattleNFTFactory,
   Aborted,
@@ -37,7 +38,9 @@ export function handleCreatedGame(event: CreatedGame): void {
   game.status = "Waiting";
   game.startsAt = gameContract.value10;
   game.type = gameContract.value12 == 0 ? "Bull" : "Bear";
-
+  const playerAddresses = new Array<Bytes>(0);
+  playerAddresses.push(event.transaction.from);
+  game.playerAddresses = playerAddresses;
   game.save();
   const player = Player.load(`${event.transaction.from.toHexString()}`);
   if (!player) {
@@ -93,6 +96,9 @@ export function handleJoinedGame(event: JoinedGame): void {
   const factoryContract = BattleNFTFactory.bind(event.address);
   const gameContract = factoryContract.allGames(event.params.id);
   const game = new Game(`${event.params.id}`);
+  const playerAddresses = game.playerAddresses;
+  playerAddresses.push(event.transaction.from);
+  game.playerAddresses = playerAddresses;
   if (!player) {
     const newPlayer = new Player(`${event.transaction.from.toHexString()}`);
     newPlayer.totalJoinedGames = ONE_BI;
